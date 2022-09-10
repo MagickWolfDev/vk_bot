@@ -31,6 +31,16 @@ class ComandHandler{
 
         return resault
     }
+
+    async getLink() {
+        let link = await this.bot.execute('messages.getInviteLink',
+        { 
+            peer_id: Number(process.env.CHAT_ID),
+            reset: 0
+        });
+
+        return link.link
+    }
 }
 
 module.exports = ComandHandler

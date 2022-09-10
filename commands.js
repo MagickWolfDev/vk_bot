@@ -29,13 +29,13 @@ class Comands
     //Разметка кнопок
 
     //Главное меню
-    mainMenu(ctx)
+    mainMenu(id)
     {
         return Markup.keyboard([
             [
-            Markup.button('Комманды', 'primary'),
+            Markup.button('Команды', 'primary'),
             Markup.button('Информация', 'primary'),
-            ],this.isAdmin(ctx.message.from_id)?
+            ],this.isAdmin(id)?
             [
                 Markup.button('Админ панель', 'primary'),
                 Markup.button('Закрыть', 'negative'),
@@ -46,7 +46,7 @@ class Comands
     }
 
     //Информация о боте
-    infoMenu(ctx)
+    infoMenu(id)
     {
         return Markup.keyboard([
             [
@@ -55,9 +55,9 @@ class Comands
         ])
     }
     //Админ меню
-    adminMenu(ctx)
+    adminMenu(id)
     {
-        if(!this.isSuperAdmin(ctx.message.from_id))
+        if(!this.isSuperAdmin(id))
             return Markup.keyboard([
                 [
                     Markup.button('Кикнуть', 'primary'),
@@ -76,14 +76,16 @@ class Comands
                 ],
                 [
                     Markup.button('Сообщение', 'primary'),
+                    Markup.button('Ссылка', 'primary'),
                     Markup.button('Меню', 'positive'),
                 ],[
-                    Markup.button('Назначить админа', 'primary'),
+                    Markup.button('Назначить админа', 'secondary'),
+                    Markup.button('Список админов', 'secondary'),
                 ]        
             ])
 
     }
-    //Общедоступные комманды
+    //Общедоступные Команды
     commandMenu(ctx)
     {
         return Markup.keyboard([
@@ -128,6 +130,7 @@ class Comands
     }
     );
 
+    //Мут
     sceneMute = new Scene('mute',
     (ctx) => {
         ctx.scene.next();
@@ -153,6 +156,7 @@ class Comands
     }
     );
 
+    //Отправка сообщения от имени бота
     sceneMessage = new Scene('message',
     (ctx) => {
         ctx.scene.next();
@@ -177,18 +181,45 @@ class Comands
 
         try {
             this.commandHandler.sendMessageToGroup(ctx.message.text).then(() => {
-                ctx.reply('Сообщение успешно отправлено.', null, this.adminMenu());
+                ctx.reply('Сообщение успешно отправлено.', null, this.adminMenu(ctx.message.from_id));
         })
         }catch{
-            ctx.reply('Ошибка отправки сообщения.', null, this.adminMenu());
+            ctx.reply('Ошибка отправки сообщения.', null, this.adminMenu(ctx.message.from_id));
         }
+    }
+    );
+
+    //Добавление новых админов
+    sceneAdminAdd = new Scene('adminAdd',
+    (ctx) => {
+        ctx.scene.next();
+        ctx.reply('Укажите пользователя или введите id:', null, 
+            Markup.keyboard([
+                [
+                    Markup.button({
+                    action: {
+                        type: 'callback',
+                        label: 'Отмена',
+                        
+                    },
+                    color: 'negative'
+                    }),
+                ]
+            ]).oneTime()
+        );
+    },
+    (ctx) => {
+        ctx.session.muteId = +ctx.message.text;
+        ctx.scene.leave();
+
+        ctx.reply('Функция отработала, но пока что нихуя не сделала!', null, this.adminMenu(ctx.message.from_id));
     }
     );
 
 
     //Подключение обработки эвентов
 
-    stage = new Stage(this.sceneKick, this.sceneMute, this.sceneMessage);
+    stage = new Stage(this.sceneKick, this.sceneMute, this.sceneMessage, this.sceneAdminAdd);
     session = new Session();
 
     //Обработка команд
@@ -205,13 +236,14 @@ class Comands
                 user_id: ctx.message.user_id,
                 peer_id: ctx.message.peer_id
             })
-            ctx.reply('Отменено.', null, this.adminMenu(ctx));
+            console.log(ctx.message.user_id);
+            ctx.reply('Отменено.', null, this.adminMenu(ctx.message.user_id));
           });
 
         //главное меню
         this.bot.command('Меню', async (ctx) => {
             ctx.reply('Главное меню', null, 
-                this.mainMenu(ctx).oneTime(),
+                this.mainMenu(ctx.message.from_id).oneTime(),
             );
         });
 
@@ -234,22 +266,22 @@ class Comands
             }
 
             ctx.reply(comandList, null,  
-                this.infoMenu(ctx).oneTime(),
+                this.infoMenu(ctx.message.from_id).oneTime(),
             );
         });
 
         //Админ панель
         this.bot.command('Админ панель', async (ctx) => {
             ctx.reply('Админ команды', null, 
-                this.adminMenu(ctx)
+                this.adminMenu(ctx.message.from_id)
             );
 
         })
 
-        //Доступные комманды
-        this.bot.command('Комманды', (ctx) => {
+        //Доступные Команды
+        this.bot.command('Команды', (ctx) => {
             ctx.reply('Доступные команды', null, 
-            this.commandMenu(ctx)
+            this.commandMenu(ctx.message.from_id)
         );
         })
 
@@ -259,7 +291,7 @@ class Comands
             {
                 ctx.scene.enter('kick');
             }else{
-                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx));
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx.message.from_id));
             }
             
         })
@@ -270,7 +302,7 @@ class Comands
             {
                 ctx.scene.enter('mute');
             }else{
-                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx));
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx.message.from_id));
             }
         })
 
@@ -280,7 +312,28 @@ class Comands
             {
                 ctx.scene.enter('message');
             }else{
-                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx));
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx.message.from_id));
+            }
+        })
+
+        this.bot.command('Ссылка', (ctx) => {
+            if(this.isAdmin(ctx.message.from_id))
+            {
+                this.commandHandler.getLink().then((link) => {
+                    ctx.reply(link,  null, this.adminMenu(ctx.message.from_id))
+                })
+            }else{
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx.message.from_id));
+            }
+        })
+
+        //Назначение администраторов
+        this.bot.command('Назначить админа', (ctx) => {
+            if(this.isSuperAdmin(ctx.message.from_id))
+            {
+                ctx.scene.enter('adminAdd');
+            }else{
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx.message.from_id));
             }
         })
 
@@ -290,6 +343,7 @@ class Comands
                 ctx.reply(user);
             });
         })
+
     }
 }
 
