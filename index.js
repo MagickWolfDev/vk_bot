@@ -1,6 +1,5 @@
 const VkBot = require('node-vk-bot-api/lib');
-const Markup = require('node-vk-bot-api/lib/markup');
-const Comands = require('./comands')
+const Comands = require('./commands')
 
 require('dotenv').config()
 
