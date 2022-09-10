@@ -3,6 +3,8 @@ const Scene = require('node-vk-bot-api/lib/scene');
 const Stage = require('node-vk-bot-api/lib/stage');
 const Session = require('node-vk-bot-api/lib/session');
 
+const CommandHandler = require('./commandsHandler')
+
 require('dotenv').config()
 
 
@@ -11,9 +13,15 @@ class Comands
     constructor(bot)
     {
         this.bot = bot;
+        this.commandHandler = new CommandHandler(this.bot)
     }
 
     isAdmin(id)
+    {
+        return id == process.env.ADMIN_ID
+    }
+
+    isSuperAdmin(id)
     {
         return id == process.env.ADMIN_ID
     }
@@ -49,15 +57,31 @@ class Comands
     //Админ меню
     adminMenu(ctx)
     {
-        return Markup.keyboard([
-            [
-                Markup.button('Кикнуть', 'primary'),
-                Markup.button('Заткнуть', 'primary'),
-            ],[
-                Markup.button('Сообщение', 'primary'),
-                Markup.button('Меню', 'positive'),
-            ]          
-        ])
+        if(!this.isSuperAdmin(ctx.message.from_id))
+            return Markup.keyboard([
+                [
+                    Markup.button('Кикнуть', 'primary'),
+                    Markup.button('Заткнуть', 'primary'),
+                ],
+                [
+                    Markup.button('Сообщение', 'primary'),
+                    Markup.button('Меню', 'positive'),
+                ]        
+            ])
+        else 
+            return Markup.keyboard([
+                [
+                    Markup.button('Кикнуть', 'primary'),
+                    Markup.button('Заткнуть', 'primary'),
+                ],
+                [
+                    Markup.button('Сообщение', 'primary'),
+                    Markup.button('Меню', 'positive'),
+                ],[
+                    Markup.button('Назначить админа', 'primary'),
+                ]        
+            ])
+
     }
     //Общедоступные комманды
     commandMenu(ctx)
@@ -95,7 +119,12 @@ class Comands
     (ctx) => {
         ctx.session.kickId = +ctx.message.text;
         ctx.scene.leave();
-        ctx.reply(`Пользователь ${ctx.session.kickId} кикнут`, null, this.adminMenu());
+        try{
+            this.commandHandler.kick(ctx, ctx.message.text.match(/id(\d*)/)[1]);
+            ctx.reply(`Пользователь успешно кикнут.`, null, this.adminMenu());
+        } catch(err){
+            ctx.reply(`Произошла непредвиденная ошибка.`, null, this.adminMenu());
+        }
     }
     );
 
@@ -145,7 +174,14 @@ class Comands
     (ctx) => {
         ctx.session.muteId = +ctx.message.text;
         ctx.scene.leave();
-        ctx.reply('Сообщение успешно отправлено.', null, this.adminMenu());
+
+        try {
+            this.commandHandler.sendMessageToGroup(ctx.message.text).then(() => {
+                ctx.reply('Сообщение успешно отправлено.', null, this.adminMenu());
+        })
+        }catch{
+            ctx.reply('Ошибка отправки сообщения.', null, this.adminMenu());
+        }
     }
     );
 
@@ -219,21 +255,42 @@ class Comands
 
         //Комманда кика
         this.bot.command('Кикнуть', (ctx) => {
-            ctx.scene.enter('kick');
+            if(this.isAdmin(ctx.message.from_id))
+            {
+                ctx.scene.enter('kick');
+            }else{
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx));
+            }
+            
         })
 
-        //Коомманда удаление сообщений
+        //Комманда удаление сообщений
         this.bot.command('Заткнуть', (ctx) => {
-            ctx.scene.enter('mute');
+            if(this.isAdmin(ctx.message.from_id))
+            {
+                ctx.scene.enter('mute');
+            }else{
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx));
+            }
         })
 
         //Комманда отправки сообщения от имени бота
         this.bot.command('Сообщение', (ctx) => {
-            ctx.scene.enter('message');
+            if(this.isAdmin(ctx.message.from_id))
+            {
+                ctx.scene.enter('message');
+            }else{
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx));
+            }
         })
 
+        //Команда получения рандомного участника беседы
+        this.bot.command('Челик', (ctx) => {
+            this.commandHandler.randUser().then((user) => {
+                ctx.reply(user);
+            });
+        })
     }
-
 }
 
 module.exports = Comands
