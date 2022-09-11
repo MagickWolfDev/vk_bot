@@ -236,7 +236,7 @@ class Comands
                 user_id: ctx.message.user_id,
                 peer_id: ctx.message.peer_id
             })
-            console.log(ctx.message.user_id);
+
             ctx.reply('Отменено.', null, this.adminMenu(ctx.message.user_id));
           });
 
@@ -339,8 +339,24 @@ class Comands
 
         //Команда получения рандомного участника беседы
         this.bot.command('Челик', (ctx) => {
+            
             this.commandHandler.randUser().then((user) => {
                 ctx.reply(user);
+            });
+        })
+
+        //Команда получения списка админов
+        this.bot.command('Список админов', (ctx) => {
+            this.commandHandler.getAdmins((err, row) => {
+                if (!err)
+                {
+                    if (row)
+                        ctx.reply(row.id);
+                    else
+                        ctx.reply('Ничего не найдено.');
+                }else{
+                        ctx.reply('Произошла ошибка.');
+                }
             });
         })
 

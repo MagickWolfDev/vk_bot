@@ -18,6 +18,7 @@
   "homepage": "https://github.com/MagickWolfDev/vk_bot#readme",
   "dependencies": {
     "dotenv": "^16.0.2",
-    "node-vk-bot-api": "^3.5.0"
+    "node-vk-bot-api": "^3.5.0",
+    "sqlite3": "^5.0.11"
   }
 }

@@ -1,8 +1,18 @@
 require('dotenv').config()
+const sqlite3 = require('sqlite3').verbose();
+
 class ComandHandler{
 
     constructor(bot) {
         this.bot = bot;
+
+        this.db = new sqlite3.Database('./database.db', (err) => {
+            if (err) {
+              console.log('Could not connect to database', err)
+            } else {
+              console.log('Connected to database')
+            }
+          })
     }
 
     kick(ctx, id)
@@ -41,6 +51,31 @@ class ComandHandler{
 
         return link.link
     }
+
+    async usersList(f) {
+        try {  
+            this.db.get('SELECT * FROM users', f)
+        } catch(err) {
+            return err
+        }
+    }
+
+    async getAdmins(f) {
+        try {  
+            this.db.get('SELECT * FROM users WHERE adminLVL > 0 AND adminLVL < 2', f)
+        } catch(err) {
+            return err
+        }
+    }
+
+    async getSuperAdmins(f) {
+        try {  
+            this.db.get('SELECT * FROM users WHERE adminLVL = 2', f)
+        } catch(err) {
+            return err
+        }
+    }
+
 }
 
 module.exports = ComandHandler
