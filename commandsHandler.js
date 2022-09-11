@@ -52,6 +52,16 @@ class ComandHandler{
         return link.link
     }
 
+    async updateUsers(users) {
+        users.map((user) => {
+            try {
+                this.db.run(`INSERT INTO users (id, adminLVL) VALUES (${user.id}, 0)`);
+            } catch(err) {
+                console.log(err);
+            }
+        })
+    }
+
     async usersList(f) {
         try {  
             this.db.get('SELECT * FROM users', f)
@@ -73,6 +83,14 @@ class ComandHandler{
             this.db.get('SELECT * FROM users WHERE adminLVL = 2', f)
         } catch(err) {
             return err
+        }
+    }
+
+    async addAdmin(id) {
+        try {
+            this.db.run(`UPDATE users SET adminLVL = 1 WHERE id = ${id} AND adminLVL < 1`)
+        } catch(err) {
+            console.log(err);
         }
     }
 

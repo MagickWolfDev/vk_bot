@@ -61,7 +61,7 @@ class Comands
             return Markup.keyboard([
                 [
                     Markup.button('Кикнуть', 'primary'),
-                    Markup.button('Заткнуть', 'primary'),
+                    Markup.button('Мут', 'primary'),
                 ],
                 [
                     Markup.button('Сообщение', 'primary'),
@@ -72,7 +72,7 @@ class Comands
             return Markup.keyboard([
                 [
                     Markup.button('Кикнуть', 'primary'),
-                    Markup.button('Заткнуть', 'primary'),
+                    Markup.button('Мут', 'primary'),
                 ],
                 [
                     Markup.button('Сообщение', 'primary'),
@@ -93,6 +93,27 @@ class Comands
                 Markup.button('Челик', 'primary'),
             ],[
                 Markup.button('Меню', 'positive'),
+            ]
+        ])
+    }
+
+    mutMenu()
+    {
+        return Markup.keyboard([
+            [
+                Markup.button('Замутить', 'primary'),
+                Markup.button('Челы в муте', 'primary'),
+            ],[
+                Markup.button({
+                    action: {
+                        type: 'callback',
+                        label: 'Назад',
+                        payload: JSON.stringify({
+                            text: 'Админ меню.',
+                          }),
+                    },
+                    color: 'secondary'
+                    }),
             ]
         ])
     }
@@ -147,7 +168,8 @@ class Comands
                     }),
                 ]
             ]).oneTime()
-        );
+        )
+        
     },
     (ctx) => {
         ctx.session.muteId = +ctx.message.text;
@@ -209,7 +231,8 @@ class Comands
         );
     },
     (ctx) => {
-        ctx.session.muteId = +ctx.message.text;
+         ctx.message.text;
+
         ctx.scene.leave();
 
         ctx.reply('Функция отработала, но пока что нихуя не сделала!', null, this.adminMenu(ctx.message.from_id));
@@ -231,13 +254,15 @@ class Comands
 
         this.bot.event('message_event', (ctx) => {
             ctx.scene.leave()
+
+             ctx.reply(ctx.message.payload.text || 'Отменено.', null, this.adminMenu(ctx.message.user_id));
+
             this.bot.execute('messages.sendMessageEventAnswer', {
                 event_id: ctx.message.event_id,
                 user_id: ctx.message.user_id,
                 peer_id: ctx.message.peer_id
             })
-
-            ctx.reply('Отменено.', null, this.adminMenu(ctx.message.user_id));
+            
           });
 
         //главное меню
@@ -296,11 +321,20 @@ class Comands
             
         })
 
-        //Комманда удаление сообщений
-        this.bot.command('Заткнуть', (ctx) => {
+        //Комманда удаления сообщений
+        this.bot.command('Замутить', (ctx) => {
             if(this.isAdmin(ctx.message.from_id))
             {
                 ctx.scene.enter('mute');
+            }else{
+                ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx.message.from_id));
+            }
+        })
+
+        this.bot.command('Мут', (ctx) => {
+            if(this.isAdmin(ctx.message.from_id))
+            {
+                ctx.reply('Мут меню', null, this.mutMenu())
             }else{
                 ctx.reply('У вас недостаточно прав.', null, this.mainMenu(ctx.message.from_id));
             }
@@ -343,6 +377,16 @@ class Comands
             this.commandHandler.randUser().then((user) => {
                 ctx.reply(user);
             });
+        })
+
+        this.bot.command('/update', (ctx) => {
+            this.bot.execute('messages.getConversationMembers', {
+                peer_id: process.env.CHAT_ID,
+                fields: ['first_name', 'last_name']
+            }).then((res) => {
+                let users = res.profiles;
+                this.commandHandler.updateUsers(users)
+            });     
         })
 
         //Команда получения списка админов
