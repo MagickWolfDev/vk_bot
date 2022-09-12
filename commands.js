@@ -496,6 +496,10 @@ class Comands
                 }
             });
         })
+
+        this.bot.on('', (ctx) => {
+            
+        })
     }
 }
 

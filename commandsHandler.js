@@ -111,6 +111,13 @@ class ComandHandler{
         }
     }
 
+    async isMuted(f){
+        try {
+            this.db.get('SELECT id FROM muted', f);
+        } catch(err) {
+            console.log(err);
+        }
+    } 
 }
 
 module.exports = ComandHandler
