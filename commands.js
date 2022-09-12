@@ -90,7 +90,8 @@ class Comands
     {
         return Markup.keyboard([
             [
-                Markup.button('Челик', 'primary'),
+                Markup.button('Ранд челик', 'primary'),
+                Markup.button('Id человека', 'primary'),
             ],[
                 Markup.button('Меню', 'positive'),
             ]
@@ -169,12 +170,35 @@ class Comands
                 ]
             ]).oneTime()
         )
-        
-    },
-    (ctx) => {
+    },(ctx) => {
+        ctx.scene.next();
         ctx.session.muteId = +ctx.message.text;
+        ctx.reply('Укажите время, на которое будет выдан мут (мин, час, дни). Пример: 10 мин, 2 час, 1 день.', null, 
+            Markup.keyboard([
+            [
+                Markup.button('1 мин', 'primary'),
+                Markup.button('10 мин', 'primary'),
+                Markup.button('30 мин', 'primary'),
+            ],[
+                Markup.button('1 час', 'primary'),
+                Markup.button('3 часа', 'primary'),
+                Markup.button('1 день', 'primary'),
+            ],[
+                Markup.button({
+                    action: {
+                        type: 'callback',
+                        label: 'Отмена',
+                        
+                    },
+                    color: 'negative'
+                    }),
+            ]
+        ]).oneTime()
+        );
+    },(ctx) => {
+        ctx.session.muteTime = +ctx.message.text;
         ctx.scene.leave();
-        ctx.reply(`Пользователь ${ctx.session.muteId} заткнут`, null, this.adminMenu());
+        ctx.reply(`Пользователь ${ctx.session.muteId} добавлен в мут на ${ctx.message.text}`, null, this.adminMenu());
     }
     );
 
@@ -211,6 +235,32 @@ class Comands
     }
     );
 
+    //Получение id человека
+    sceneGetId = new Scene('getId',
+    (ctx) => {
+        ctx.scene.next();
+        ctx.reply('Укажите пользователя или введите id:', null, 
+            Markup.keyboard([
+                [
+                    Markup.button({
+                    action: {
+                        type: 'callback',
+                        label: 'Отмена',
+                        
+                    },
+                    color: 'negative'
+                    }),
+                ]
+            ]).oneTime()
+        );
+    },
+    (ctx) => {
+        let id = ctx.message.text.match(/id(\d*)/)[1];
+        ctx.scene.leave();
+        ctx.reply(id, null, this.mainMenu(ctx.message.from_id));
+    }
+    );
+
     //Добавление новых админов
     sceneAdminAdd = new Scene('adminAdd',
     (ctx) => {
@@ -242,7 +292,7 @@ class Comands
 
     //Подключение обработки эвентов
 
-    stage = new Stage(this.sceneKick, this.sceneMute, this.sceneMessage, this.sceneAdminAdd);
+    stage = new Stage(this.sceneKick, this.sceneMute, this.sceneMessage, this.sceneAdminAdd, this.sceneGetId);
     session = new Session();
 
     //Обработка команд
@@ -372,7 +422,7 @@ class Comands
         })
 
         //Команда получения рандомного участника беседы
-        this.bot.command('Челик', (ctx) => {
+        this.bot.command('Ранд челик', (ctx) => {
             
             this.commandHandler.randUser().then((user) => {
                 ctx.reply(user);
@@ -387,6 +437,11 @@ class Comands
                 let users = res.profiles;
                 this.commandHandler.updateUsers(users)
             });     
+        })
+
+        //Команда получение id человека
+        this.bot.command('Id человека', (ctx) => {
+            ctx.scene.enter('getId');
         })
 
         //Команда получения списка админов
