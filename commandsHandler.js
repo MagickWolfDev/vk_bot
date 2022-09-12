@@ -62,6 +62,15 @@ class ComandHandler{
         })
     }
 
+
+    async initDB() {
+        try{
+            this.db.run('CREATE TABLE users (id int NOT NULL PRIMARY KEY UNIQUE, adminLVL int DEFAULT 0);');
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
     async usersList(f) {
         try {  
             this.db.get('SELECT * FROM users', f)
@@ -91,6 +100,14 @@ class ComandHandler{
             this.db.run(`UPDATE users SET adminLVL = 1 WHERE id = ${id} AND adminLVL < 1`)
         } catch(err) {
             console.log(err);
+        }
+    }
+
+    async getMuted(f){
+        try {
+            this.db.get('SELECT * FROM muted', f);
+        } catch(f) {
+
         }
     }
 

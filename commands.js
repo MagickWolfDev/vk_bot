@@ -81,7 +81,9 @@ class Comands
                 ],[
                     Markup.button('Назначить админа', 'secondary'),
                     Markup.button('Список админов', 'secondary'),
-                ]        
+                ],[
+                    Markup.button('Пользователи', 'secondary'),
+                ]
             ])
 
     }
@@ -281,9 +283,19 @@ class Comands
         );
     },
     (ctx) => {
-         ctx.message.text;
+        let id = ctx.message.text.match(/id(\d*)/)[1]
 
         ctx.scene.leave();
+
+        try{
+            this.commandHandler.addAdmin(id).then(
+                ctx.reply(`Пользователь ${cx.message.text} назначен администратором.`)
+            )
+            
+        }catch(err) {
+            ctx.reply('Произошла ошибка.', null, this.adminMenu())
+        }
+        
 
         ctx.reply('Функция отработала, но пока что нихуя не сделала!', null, this.adminMenu(ctx.message.from_id));
     }
@@ -444,6 +456,32 @@ class Comands
             ctx.scene.enter('getId');
         })
 
+        this.bot.command('Пользователи', (ctx) => {
+            this.commandHandler.usersList((err, row) => {
+                console.log(err, row);
+            })
+        })
+
+        this.bot.command('/init', (ctx) => {
+            this.commandHandler.initDB();
+        })
+
+        this.bot.command('Челы в муте', (ctx) => {
+            try {
+                this.commandHandler.getMuted((err, row) => {
+                    if(err)
+                    {
+                        ctx.reply('Произошла ошибка при выполнение запроса.', null, this.adminMenu());
+                    }else{
+                        ctx.reply('Запрос выполнен.')
+                    }
+                })
+            } catch(err) {
+                console.log(err);
+                ctx.reply('Произошла непредвиденная ошибка.', null, this.adminMenu());
+            }
+        })
+
         //Команда получения списка админов
         this.bot.command('Список админов', (ctx) => {
             this.commandHandler.getAdmins((err, row) => {
@@ -458,7 +496,6 @@ class Comands
                 }
             });
         })
-
     }
 }
 
